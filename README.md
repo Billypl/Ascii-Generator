@@ -18,5 +18,7 @@ Only thing to do is put the image in the same location as main.cpp file and you 
 	      - Pass one SIZE and one RATIO - ratio parameter will become the ratio of the SIZE argument
 	        - i.e. image 1000x500 ==> reduce(100, 0.5) ==> image 100x25  
 - print_ascii() - There are 2 ways to use it:
-  - print_ascii() - prints the output to the console
-  - print_ascii(\*.txt) - prints the output to the text file 
+
+  	1. print_ascii() - prints the output to the console
+
+  	2. print_ascii(\*.txt) - prints the output to the text file 
