@@ -4,46 +4,45 @@
 #include <vector>
 using namespace std;
 
-enum ImageType {
-	PNG, JPG, BMP
-};
+
 
 class Image {
 
 private:
-	
 
-	class Pixel {
-	public:
+	enum ImageType {
+		PNG, JPG, BMP
+	};
+	struct Pixel {
+		Pixel(uint8_t R = 0, uint8_t G = 0, uint8_t B = 0);
 		uint8_t R, G, B;
 	};
 
 	vector <Pixel> pixels;
-	size_t size = 0;
 	int w;
 	int h;
 	int channels;
 
 	ImageType getFileType(const char* filename);
-	void formatToPixels(uint8_t* data);
-	uint8_t* formatToUint8();
+	vector <Pixel> formatToPixels(uint8_t* data);
+	uint8_t* formatToUint8(vector <Pixel>& pixels);
+	size_t size();
 
 public:
 	Image(const char* filename); //read from file
 	Image(int w, int h, int channels); //new blank
 	Image(const Image& img); //copy
-	~Image();
-
-	bool read(const char* filename);
-	bool write(const char* filename);
-
-	Image& grayscale_avg();
-	Image& grayscale_lum();
-	Image& colorMask(float R, float G, float B);
 	
-	Image& flipX();
-	Image& flipY();
-	Image& flipRight();
+	bool readImageData(const char* filename);
+	bool writeImageData(const char* filename);
+
+	void grayscale_avg();
+	void grayscale_lum();
+	void colorMask(float R, float G, float B);
+	
+	void flipX();
+	void flipY();
+	void flipRight();
 
 private:
 	bool deducePixelsOrPercentage(const float ratioW, const float ratioH, float& dstH, float& dstW);
@@ -60,7 +59,7 @@ public:
 	// 3.  BONUS: Pixel + ratio of pixels
 	// Pass one SIZE and one RATIO - ratio parameter will become the ratio of the SIZE argument
 	//	         i.e. image 1000x500 ==> reduce(100, 0.5) ==> image 100x25
-	Image reduce(float dstW, float dstH = 0.0);
+	void reduce(float dstW, float dstH = 0.0);
 
 private:
 	template <typename Out>

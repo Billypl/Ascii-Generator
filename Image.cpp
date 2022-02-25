@@ -1,62 +1,58 @@
-#include <fstream>
 #define STB_IMAGE_IMPLEMENTATION
 #define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "Image.h"
 #include "stb_image.h"
 #include "stb_image_write.h"
+#include "Image.h"
+#include <fstream>
 #include <iostream>
 #include <math.h>
 
 using namespace std;
 
 //HELP FUNCTIONS
-ImageType Image::getFileType(const char* filename)                             
+Image::ImageType Image::getFileType(const char* filename)                             
 {
-	const auto constChar_to_str = [](const char* str) 
-	{
-		string s_str(str, strlen(str));
-		return s_str;
-	};
-
-	string filename_s = constChar_to_str(filename);
+	string filename_s(filename, strlen(filename));
 	string ext = filename_s.substr(filename_s.find('.'));
 
-	if (filename_s.find('.') == std::string::npos) return PNG; //default PNG
+	if (filename_s.find('.') == string::npos) return PNG; //default PNG
 	
 	if (ext == ".png") return PNG;
 	if (ext == ".jpg") return JPG;
 	if (ext == ".bmp") return BMP;
 }
-
-void Image::formatToPixels(uint8_t* data)
+vector <Image::Pixel> Image::formatToPixels(uint8_t* data)
 {
-	pixels.clear();
-	for (int i = 0; i < size*channels; i+=channels)
+	vector <Pixel> pixelsNew;
+	pixelsNew.reserve(size());
+	for (int i = 0; i < size()*channels; i+=channels)
 	{
-		Pixel p;
-		p.R = data[i];
-		p.G = data[i+1];
-		p.B = data[i+2];
-
-		pixels.push_back(p);
+		uint8_t R = data[i], G = data[i+1], B = data[i+2];
+		Pixel pixel(R,B,G);
+		pixelsNew.push_back(pixel);
 	}
+	return pixelsNew;
 }
-uint8_t* Image::formatToUint8()
+uint8_t* Image::formatToUint8(vector <Pixel>& pixels)
 {
 	uint8_t* data = new uint8_t[pixels.size()*channels];
-	for (int i = 0; i < size*channels; i+=channels)
+	for (int i = 0; i < size()*channels; i+=channels)
 	{
-		data[i] = pixels[i / channels].R;
-		data[i + 1] = pixels[i / channels].G;
-		data[i + 2] = pixels[i / channels].B;
+		data[i] = pixels[i/channels].R;
+		data[i+1] = pixels[i/channels].G;
+		data[i+2] = pixels[i/channels].B;
 	}
 	return data;
+}
+size_t Image::size()
+{
+	return w * h;
 }
 
 //CONSTRUCTORS
 Image::Image(const char* filename)
 {
-	if (read(filename))
+	if (readImageData(filename))
 		cout << "Read " << filename << endl;
 	else
 	{
@@ -67,37 +63,33 @@ Image::Image(const char* filename)
 Image::Image(int w, int h, int channels)
 	: w(w), h(h), channels(channels)
 {
-	size = w * h;
-	if (!size) return;
-	pixels.resize(size);
+	if (this->size()) return;
+	pixels.resize(this->size());
 }
 Image::Image(const Image& img)
 	: Image(img.w, img.h, img.channels) //!clears values when object returned from flipRight() is being assigned to new object
 {
 	pixels = img.pixels;
 }
-Image::~Image()
-{
-	//if(data != nullptr) this->write("result.png"); //overriting the file
-	//stbi_image_free(data);
-}
+
+Image::Pixel::Pixel(uint8_t R, uint8_t G, uint8_t B) : R(R), G(G), B(B) {};
 
 //MANAGING FILES
-bool Image::read(const char* filename)
+bool Image::readImageData(const char* filename)
 {
 	uint8_t* data = nullptr;
 	data = stbi_load(filename, &w, &h, &channels, 0);
-	size = w * h;
-	this->formatToPixels(data);
+
+	pixels = formatToPixels(data);
 	
 	bool success = data != nullptr;
 	delete[] data; data = nullptr;
 	
 	return success;
 }
-bool Image::write(const char* filename)
+bool Image::writeImageData(const char* filename)
 {
-	uint8_t* data = this->formatToUint8();
+	uint8_t* data = formatToUint8(pixels);
 	ImageType type = getFileType(filename);
 	int success = 0;
 
@@ -118,7 +110,7 @@ bool Image::write(const char* filename)
 }
 
 //FILTERS
-Image& Image::grayscale_avg()
+void Image::grayscale_avg()
 { // (R+G+B)/3 = total/channels = avg
 	if (channels < 3)
 		cout << "Image " << this << " has less than 3 channels. It is assumed to be grayscale";
@@ -130,9 +122,8 @@ Image& Image::grayscale_avg()
 			p.R = p.G = p.B = gray;
 		}
 	}
-	return *this;
 }
-Image& Image::grayscale_lum()
+void Image::grayscale_lum()
 {
 	if (channels < 3)
 		cout << "Image " << this << " has less than 3 channels. It is assumed to be grayscale";
@@ -145,9 +136,8 @@ Image& Image::grayscale_lum()
 			p.R = p.G = p.B = gray;
 		}
 	}
-	return *this;
 }
-Image& Image::colorMask(float R, float G, float B)
+void Image::colorMask(float R, float G, float B)
 {
 	if (channels < 3)
 		cout << "To use that function, your picture has to have at least 3 channels" << endl;
@@ -160,30 +150,24 @@ Image& Image::colorMask(float R, float G, float B)
 			p.B *= B;
 		}
 	}
-	return *this;
 }
 
 //POSITIONS
-Image& Image::flipX()
+void Image::flipX()
 {
 	for (int y = 0; y < h; ++y)
 		for (int x = 0; x < w/2; ++x)
 			swap(pixels[x + y * w], pixels[(w - 1 - x) + y * w]);
-
-	return* this;
 }
-Image& Image::flipY()
+void Image::flipY()
 {
 	for (int y = 0; y < h / 2; ++y)
 		for (int x = 0; x < w; ++x)
 			swap(pixels[x + y * w], pixels[x + (h - y - 1) * w]);
-
-	return *this;
 }
-Image& Image::flipRight()
+void Image::flipRight()
 {
-	if (pixels.empty()) return *this;
-	vector <Image::Pixel> pixels_new; pixels_new.resize(size);
+	vector <Image::Pixel> pixels_new; pixels_new.resize(size());
 
 	for (int y = 0; y < h; y++)	
 		for (int x = 0; x < w; x++)
@@ -198,8 +182,6 @@ Image& Image::flipRight()
 
 	swap(w, h);
 	pixels = pixels_new;
-	
-	return *this;
 }
 
 bool Image::deducePixelsOrPercentage(const float ratioW, const float ratioH, float& dstW, float& dstH)
@@ -221,21 +203,19 @@ bool Image::deducePixelsOrPercentage(const float ratioW, const float ratioH, flo
 	}
 	return 1;
 }
-Image Image::reduce(float ratioW, float ratioH)
+void Image::reduce(float ratioW, float ratioH)
 {
 	float dstW = ratioW, dstH = ratioH;
 
 	if (!deducePixelsOrPercentage(ratioW, ratioH, dstW, dstH))
 	{
 		cout << "Image can't have negative size" << endl;
-		return *this;
+		return;
 	}
-
-
 	if (dstW > w || dstH > h)
 	{
 		cout << "Can't reduce image when target width or/and height are bigger than source" << endl;
-		return *this;
+		return;
 	}
 
 	int copiedColumns = 0;
@@ -288,12 +268,9 @@ Image Image::reduce(float ratioW, float ratioH)
 	//writing new data info
 	h = dstH;
 	w = dstW;
-	size = w * h;
 
 	//overriding old pixels with new ones and formating it to *data
 	pixels = pixelsS;
-
-	return *this;
 }
 
 //ASCII
