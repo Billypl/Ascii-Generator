@@ -15,6 +15,6 @@ Only thing to do is put the image in the same location as main.cpp file and you 
 
 - print_ascii() - There are 2 ways to use it:
 
-  	1. print_ascii() - prints the output to the console
+  	- print_ascii() - prints the output to the console
 
-  	2. print_ascii(\*.txt) - prints the output to the text file 
+  	- print_ascii(\*.txt) - prints the output to the text file 
