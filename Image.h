@@ -1,10 +1,7 @@
 #pragma once
-#include <string>
 #include <stdint.h>
 #include <vector>
-using namespace std;
-
-
+#include <string>
 
 class Image {
 
@@ -18,55 +15,63 @@ private:
 		uint8_t R, G, B;
 	};
 
-	vector <Pixel> pixels;
+	std::vector <Pixel> pixels;
 	int w;
 	int h;
 	int channels;
 
-	ImageType getFileType(const char* filename);
-	vector <Pixel> formatToPixels(uint8_t* data);
-	uint8_t* formatToUint8(vector <Pixel>& pixels);
-	size_t size();
-
+	//CONSTRUCTORS
 public:
 	Image(const char* filename); //read from file
 	Image(int w, int h, int channels); //new blank
 	Image(const Image& img); //copy
-	
-	bool readImageData(const char* filename);
-	bool writeImageData(const char* filename);
 
-	void grayscale_avg();
-	void grayscale_lum();
+	//MANAGING FILES
+public:
+	void writeImageData(const char* filename);
+private:
+	void readImageData(const char* filename);
+	void printOperationStatus(bool isOperationSuccessfull, const char* filename, std::string operationName);
+
+	//FILTERS
+public:
+	void grayscaleAvg();
+	void grayscaleLum();
 	void colorMask(float R, float G, float B);
+private:
+	bool containsAtLeastThreeChannels();
 	
+	//CHANGING POSITIONS
+public:
 	void flipX();
 	void flipY();
 	void flipRight();
 
-private:
-	bool deducePixelsOrPercentage(const float ratioW, const float ratioH, float& dstH, float& dstW);
 public:
-	//There are 3 ways to use this function
-	// 1. Pixels size:
-	// - Pass just new width SIZE, height will be deduced
-	//	        i.e. image 1000x500 ==> reduce(100) ==> image 100x50
-	// - Pass both new width and height SIZE (full control over streching the image) 
-	// 2. Ratio size:
-	// - Pass new RATIO (applied for width AND height)
-	// - Pass both new width and height RATIO 
-	// 
-	// 3.  BONUS: Pixel + ratio of pixels
-	// Pass one SIZE and one RATIO - ratio parameter will become the ratio of the SIZE argument
-	//	         i.e. image 1000x500 ==> reduce(100, 0.5) ==> image 100x25
-	void reduce(float dstW, float dstH = 0.0);
+	void reduce(float dstW, float dstH);
+private:
+	void deducePixelsOrRatio(float& dstH, float& dstW);
+	bool validateSize(float sizeW, float sizeH);
+	bool isBiggerThanDstSize(int current, int size);
+	bool isThePixelToCopy(float& toNext, float ratio);
 
-private:
-	template <typename Out>
-	void print(Out &out);
+	//ASCII
 public:
-	//print ascii version to a console
-	void print_ascii(); 
-	//print ascii version to a text file
-	void print_ascii(string resultTextName);
+	void printAscii(); 
+	void printAscii(std::string resultTextName);
+private:
+	//maps value to the closest value in range (val, base range, range to assing)
+	int map_value(int value, int MinBaseRange, int MaxBaseRange, int MinDstRange, int MaxDstRange);
+	template <typename Out>
+	void print(Out& out);
+
+	//HELP FUNKCTIONS
+private:
+	ImageType getFileType(const char* filename);
+	std::vector <Pixel> formatToPixels(uint8_t* data);
+	uint8_t* formatToUint8(std::vector <Pixel>& pixels);
+public:
+	size_t size();
+	int getW();
+	int getH();
 };
