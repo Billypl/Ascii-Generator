@@ -7,7 +7,7 @@ using namespace std;
 
 float calcSize(int pixels, int orginalSize, int ratio)
 {
-	return (float)pixels / (float)orginalSize * 0.5;
+	return (float)pixels / (float)orginalSize * ratio;
 }
 
 int main()
